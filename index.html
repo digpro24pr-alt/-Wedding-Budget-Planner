@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💍 Wedding Budget Planner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--primary:#6b9c7f;--primary-dark:#5a8560;--secondary:#c4847c;
+--bg:#f2f4f1;--white:#fff;--text:#2c2c2c;--text-light:#8a8a8a;
+--border:#e8e6e1;--danger:#d32f2f;--warning:#ffa726;--success:#2e7d32;
+--card:#fbfaf8;--shadow:0 2px 10px rgba(0,0,0,.05);--shadow-lg:0 12px 32px rgba(0,0,0,.12);
+--glow:0 0 0 rgba(107,156,127,0);
+}
+body.dark{
+--bg:#13151a;--white:#1f242b;--card:#1a1e24;--text:#eaeaea;
+--text-light:#9aa0a8;--border:#2e353d;--shadow:0 2px 10px rgba(0,0,0,.3);
+}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;transition:background .4s,color .4s;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 15% 10%,rgba(107,156,127,.07),transparent 40%),radial-gradient(circle at 85% 90%,rgba(196,132,124,.07),transparent 40%);pointer-events:none;z-index:0}
+
+::-webkit-scrollbar{display:none}
+*{scrollbar-width:none;-ms-overflow-style:none}
+
+.topbar{padding:30px 32px 0;max-width:1480px;margin:0 auto;position:relative;z-index:1}
+.title-row{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px}
+.brand{display:flex;align-items:center;gap:15px}
+.ring{font-size:42px;display:inline-block;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 4px 8px rgba(0,0,0,.15))}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-7px) rotate(10deg)}}
+.title-block h1{font-size:36px;font-weight:800;font-family:Georgia,'Times New Roman',serif;letter-spacing:-1px;line-height:1.1;background:linear-gradient(120deg,var(--primary),var(--secondary),var(--primary));background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:gshift 6s linear infinite}
+@keyframes gshift{to{background-position:200% center}}
+.title-block .tag{font-size:13px;color:var(--text-light);margin-top:3px}
+
+.dark-btn{background:var(--white);border:1px solid var(--border);width:50px;height:50px;border-radius:50%;cursor:pointer;font-size:22px;transition:.45s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow)}
+.dark-btn:hover{background:linear-gradient(135deg,var(--primary),var(--secondary));border-color:transparent;transform:rotate(360deg) scale(1.12);box-shadow:0 6px 20px rgba(107,156,127,.4)}
+.dark-btn:active{transform:scale(.92)}
+
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:18px;margin:26px 0 18px}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld label{font-size:11px;color:var(--text-light);text-transform:uppercase;letter-spacing:.7px;font-weight:700}
+.fld input,.fld select{padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--white);color:var(--text);font-size:14px;font-family:inherit;transition:.25s}
+.fld input:focus,.fld select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 4px rgba(107,156,127,.14);transform:translateY(-1px)}
+.swatches{display:flex;gap:10px;padding-top:9px}
+.sw{width:30px;height:30px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:.35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.sw:hover{transform:scale(1.3) rotate(15deg)}
+.sw.active{border-color:var(--text);transform:scale(1.15)}
+.sw.active::after{content:'✓';color:#fff;display:flex;align-items:center;justify-content:center;height:100%;font-size:13px;font-weight:900;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.saved-box{padding:12px 0;font-size:13px;color:var(--text-light)}
+
+/* STATUS BAR */
+.statusbar{display:flex;flex-wrap:wrap;background:linear-gradient(120deg,var(--primary),var(--secondary));background-size:200% auto;animation:gshift 8s linear infinite;border-radius:16px;padding:5px;margin:8px 0 18px;box-shadow:0 6px 20px rgba(107,156,127,.25)}
+.statusbar .si{flex:1;min-width:130px;padding:13px 18px;color:#fff;text-align:center;transition:.3s;border-radius:12px}
+.statusbar .si:hover{background:rgba(255,255,255,.12)}
+.statusbar .si .n{font-size:23px;font-weight:800;font-family:Georgia,serif}
+.statusbar .si .l{font-size:11px;opacity:.92;text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+
+/* TABS */
+.tabs{display:flex;gap:9px;flex-wrap:wrap;padding:4px 0 16px;border-bottom:1px solid var(--border)}
+.tabs button{padding:11px 16px;background:var(--white);border:1.5px solid var(--border);border-radius:24px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);transition:.3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;display:inline-flex;align-items:center;gap:6px;position:relative;overflow:hidden}
+.tabs button::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--primary),var(--secondary));opacity:0;transition:.3s;z-index:-1}
+.tabs button:hover{border-color:var(--primary);transform:translateY(-3px);box-shadow:0 6px 16px rgba(107,156,127,.2)}
+.tabs button.active{color:#fff;border-color:transparent;box-shadow:0 5px 16px rgba(107,156,127,.4)}
+.tabs button.active::before{opacity:1}
+
+.main{max-width:1480px;margin:24px auto;padding:0 32px;position:relative;z-index:1}
+.card{background:var(--white);border-radius:20px;padding:34px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.page{display:none}
+.page.active{display:block;animation:fade .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes fade{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+
+.sec-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.sec-title{font-size:22px;font-weight:700;font-family:Georgia,serif;background:linear-gradient(120deg,var(--primary),var(--secondary));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.sec-sub{font-size:13px;color:var(--text-light);margin-top:2px}
+.section-label{font-size:18px;font-weight:700;font-family:Georgia,serif;margin:30px 0 14px;display:flex;align-items:center;gap:8px}
+.section-label:first-child{margin-top:0}
+.section-label::before{content:'';width:4px;height:20px;background:linear-gradient(var(--primary),var(--secondary));border-radius:4px}
+
+/* ALERTS */
+.alerts{background:linear-gradient(135deg,#fdf3f3,#fdf7f3);border-left:4px solid var(--danger);border-radius:12px;padding:18px 22px;margin-bottom:26px;animation:slideIn .5s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+body.dark .alerts{background:rgba(211,47,47,.1)}
+.alert{display:flex;gap:12px;align-items:center;padding:5px 0;font-size:14px}
+.alert .ico{font-size:19px;animation:bounce 1.4s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.stat{background:var(--card);border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:14px;padding:22px;transition:.35s cubic-bezier(.34,1.4,.64,1);position:relative;overflow:hidden;cursor:default}
+.stat:hover{transform:translateY(-5px) scale(1.01);box-shadow:var(--shadow-lg);border-left-color:var(--secondary)}
+.stat::after{content:'';position:absolute;top:0;left:-120%;width:80%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:shine 5s infinite;transform:skewX(-20deg)}
+@keyframes shine{0%{left:-120%}40%,100%{left:130%}}
+.stat .lbl{font-size:12px;color:var(--text-light);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.stat .val{font-size:30px;font-weight:800;font-family:Georgia,serif}
+.stat .sub{font-size:12px;color:var(--text-light);margin-top:4px}
+.stat.clickable{cursor:pointer}
+.stat.clickable:hover{border-left-color:var(--secondary)}
+
+.pbar{height:9px;background:var(--border);border-radius:8px;overflow:hidden;margin-top:12px}
+.pfill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:8px;transition:width .8s cubic-bezier(.25,.46,.45,.94);position:relative}
+.pfill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:shim 2s infinite}
+@keyframes shim{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+.twrap{overflow-x:auto;margin-top:8px;border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{padding:14px;text-align:left;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);border-bottom:2px solid var(--border)}
+td{padding:13px 14px;border-bottom:1px solid var(--border)}
+tbody tr{transition:.2s}
+tbody tr:hover{background:var(--card)}
+.cin{width:100%;padding:9px;border:1.5px solid transparent;border-radius:8px;background:transparent;font-size:14px;font-family:inherit;color:var(--text);transition:.2s}
+.cin:hover{border-color:var(--border)}
+.cin:focus{border-color:var(--primary);background:var(--white);outline:none;box-shadow:0 0 0 3px rgba(107,156,127,.12)}
+
+.badge{display:inline-block;padding:5px 13px;border-radius:14px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.b-green{background:#e6f4ea;color:#2e7d32}.b-yellow{background:#fdf0dd;color:#e08e0b}
+.b-blue{background:#e3f0f9;color:#0277bd}.b-gray{background:#eee;color:#777}
+body.dark .b-green{background:rgba(46,125,50,.22);color:#7bcf85}
+body.dark .b-yellow{background:rgba(224,142,11,.22);color:#ffc04d}
+body.dark .b-blue{background:rgba(2,119,189,.22);color:#5db4ec}
+body.dark .b-gray{background:rgba(120,120,120,.22);color:#bbb}
+
+/* BUTTONS - eye catching */
+.btn{padding:12px 20px;border:none;border-radius:24px;cursor:pointer;font-size:14px;font-weight:700;transition:.3s cubic-bezier(.34,1.5,.64,1);white-space:nowrap;display:inline-flex;align-items:center;gap:7px;position:relative;overflow:hidden}
+.btn::after{content:'';position:absolute;width:120%;height:120%;background:rgba(255,255,255,.25);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);transition:.5s}
+.btn:active::after{transform:translate(-50%,-50%) scale(1.5);opacity:0;transition:0s}
+.btn-p{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;box-shadow:0 4px 14px rgba(107,156,127,.35)}
+.btn-p:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 8px 22px rgba(107,156,127,.5)}
+.btn-s{background:var(--card);color:var(--text);border:1.5px solid var(--border)}
+.btn-s:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 5px 14px rgba(0,0,0,.08)}
+.btn-d{background:#fdeaea;color:var(--danger);border:1.5px solid var(--danger)}
+.btn-d:hover{background:var(--danger);color:#fff;transform:translateY(-2px);box-shadow:0 6px 16px rgba(211,47,47,.35)}
+.btn-sm{padding:7px 13px;font-size:12px;border-radius:16px}
+body.dark .btn-d{background:rgba(211,47,47,.14)}
+
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px}
+.tcard{background:var(--card);border:2px dashed var(--border);border-radius:16px;padding:20px;transition:.35s;min-height:180px}
+.tcard:hover{border-color:var(--primary);transform:translateY(-5px);box-shadow:var(--shadow-lg)}
+.tcard.over{border-color:var(--danger)}
+.tcard h4{font-size:17px;font-weight:700;color:var(--primary);margin-bottom:6px}
+.tcard .ti{font-size:12px;color:var(--text-light);margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.gi{background:var(--white);padding:11px 13px;border-radius:9px;margin-bottom:7px;font-size:13px;border-left:3px solid var(--primary);font-weight:500;transition:.25s}
+.gi:hover{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;transform:translateX(6px)}
+
+.chart{position:relative;height:300px;margin-top:14px;padding:18px;background:var(--card);border-radius:16px;border:1px solid var(--border)}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr}}
+
+.hstep{display:flex;gap:16px;padding:18px;background:var(--card);border:1px solid var(--border);border-radius:16px;margin-bottom:12px;transition:.35s}
+.hstep:hover{transform:translateX(10px);border-color:var(--primary);box-shadow:var(--shadow)}
+.hnum{min-width:44px;height:44px;background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;box-shadow:0 4px 12px rgba(107,156,127,.3)}
+.hstep h4{font-size:16px;margin-bottom:3px}
+.hstep p{font-size:14px;color:var(--text-light)}
+
+.notif{position:fixed;top:24px;right:24px;background:linear-gradient(135deg,var(--success),#43a047);color:#fff;padding:16px 24px;border-radius:14px;box-shadow:var(--shadow-lg);z-index:2000;font-weight:700;animation:nin .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes nin{from{transform:translateX(420px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+.empty{text-align:center;padding:52px 20px;color:var(--text-light);background:var(--card);border-radius:14px;margin-top:14px}
+
+@media(max-width:768px){
+.topbar,.main{padding-left:16px;padding-right:16px}
+.title-block h1{font-size:27px}
+.meta{grid-template-columns:1fr 1fr}
+.stat-grid{grid-template-columns:1fr}.sgrid{grid-template-columns:1fr}
+.card{padding:20px}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="title-row">
+    <div class="brand">
+      <span class="ring">💍</span>
+      <div class="title-block">
+        <h1>Wedding Budget Planner</h1>
+        <div class="tag" id="coupleTag">A calm, offline, single-file planner with local auto-save</div>
+      </div>
+    </div>
+    <button class="dark-btn" onclick="toggleDark()" title="Light / Dark mode" id="darkBtn">🌙</button>
+  </div>
+
+  <div class="meta">
+    <div class="fld"><label>Partner 1</label><input id="p1" placeholder="Your name" oninput="save()"></div>
+    <div class="fld"><label>Partner 2</label><input id="p2" placeholder="Partner's name" oninput="save()"></div>
+    <div class="fld"><label>Wedding Date</label><input type="date" id="wdate" onchange="save();renderAll()"></div>
+    <div class="fld"><label>Currency</label><select id="curr" onchange="save();renderAll()">
+      <option value="USD">USD ($)</option><option value="EUR">EUR (€)</option><option value="GBP">GBP (£)</option><option value="CAD">CAD ($)</option><option value="AUD">AUD ($)</option>
+    </select></div>
+    <div class="fld"><label>Theme</label><div class="swatches">
+      <div class="sw active" style="background:#6b9c7f" onclick="setTheme('#6b9c7f')"></div>
+      <div class="sw" style="background:#c4847c" onclick="setTheme('#c4847c')"></div>
+      <div class="sw" style="background:#7ba3c0" onclick="setTheme('#7ba3c0')"></div>
+      <div class="sw" style="background:#c9a876" onclick="setTheme('#c9a876')"></div>
+      <div class="sw" style="background:#9b7fb0" onclick="setTheme('#9b7fb0')"></div>
+    </div></div>
+    <div class="fld"><label>Last Saved</label><div class="saved-box" id="lastSaved">Never</div></div>
+  </div>
+
+  <div class="statusbar">
+    <div class="si"><div class="n" id="sb-days">—</div><div class="l">Days Left</div></div>
+    <div class="si"><div class="n" id="sb-left">$0</div><div class="l">Budget Left</div></div>
+    <div class="si"><div class="n" id="sb-conf">0%</div><div class="l">Guests Confirmed</div></div>
+    <div class="si"><div class="n" id="sb-tasks">0/0</div><div class="l">Tasks Done</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="active" onclick="tab('dashboard',this)">📊 Dashboard</button>
+    <button onclick="tab('planner',this)">📋 Planner</button>
+    <button onclick="tab('guests',this)">💗 Guest List</button>
+    <button onclick="tab('seating',this)">🪑 Seating</button>
+    <button onclick="tab('gifts',this)">🎁 Gift List</button>
+    <button onclick="tab('todo',this)">✅ To Do</button>
+    <button onclick="tab('venue',this)">🏛️ Venue Compare</button>
+    <button onclick="tab('schedule',this)">🕐 Schedule</button>
+    <button onclick="tab('categories',this)">🗂️ Categories</button>
+    <button onclick="tab('budget',this)">💰 Budget</button>
+    <button onclick="tab('spending',this)">💳 Spending</button>
+    <button onclick="tab('howto',this)">❓ How To</button>
+  </div>
+</div>
+
+<div class="main">
+<div class="card">
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="page active">
+    <div id="alerts"></div>
+    <div class="section-label">Budget at a Glance</div>
+    <div class="stat-grid">
+      <div class="stat clickable" onclick="setBudgetPrompt()"><div class="lbl">Total Budget</div><div class="val" id="d-budget">$0</div><div class="sub">Click to set 👆</div></div>
+      <div class="stat"><div class="lbl">Total Spend</div><div class="val" id="d-spend">$0</div></div>
+      <div class="stat"><div class="lbl">Paid So Far</div><div class="val" id="d-paid">$0</div></div>
+      <div class="stat"><div class="lbl">Left of Budget</div><div class="val" id="d-left">$0</div><div class="sub" id="d-pct">0% spent</div><div class="pbar"><div class="pfill" id="d-bar" style="width:0%"></div></div></div>
+    </div>
+
+    <div class="section-label">Spending Overview</div>
+    <div class="chart-grid">
+      <div><div class="sec-sub" style="text-align:center;margin-bottom:6px">Budget by Category</div><div class="chart"><canvas id="budgetChart"></canvas></div></div>
+      <div><div class="sec-sub" style="text-align:center;margin-bottom:6px">Spending Trend</div><div class="chart"><canvas id="spendChart"></canvas></div></div>
+    </div>
+
+    <div class="section-label">Items & Vendors</div>
+    <div class="twrap"><table>
+      <thead><tr><th>Item</th><th>Category</th><th>Status</th><th>Price</th><th>Due</th></tr></thead>
+      <tbody id="d-vendors"></tbody>
+    </table></div>
+
+    <div class="section-label">Guests, Gifts & Countdown</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="lbl">Confirmed</div><div class="val" id="d-confirmed">0/0</div></div>
+      <div class="stat"><div class="lbl">Seated</div><div class="val" id="d-seated">0</div></div>
+      <div class="stat"><div class="lbl">Gift List Value</div><div class="val" id="d-giftval">$0</div></div>
+      <div class="stat"><div class="lbl">Days Until Wedding</div><div class="val" id="d-days">—</div></div>
+    </div>
+
+    <div class="section-label">Data Tools</div>
+    <p class="sec-sub" style="margin-bottom:14px">Works fully offline. Everything is stored in your browser.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-p" onclick="expData()">📥 Export Backup</button>
+      <button class="btn btn-p" onclick="document.getElementById('impFile').click()">📤 Import Backup</button>
+      <input type="file" id="impFile" accept=".json" style="display:none" onchange="impData(event)">
+      <button class="btn btn-s" onclick="printSummary()">🖨️ Print Summary</button>
+      <button class="btn btn-s" onclick="loadSample()">🎁 Load Sample Data</button>
+      <button class="btn btn-d" onclick="if(confirm('Reset everything? This cannot be undone.'))resetAll()">🔄 Reset</button>
+    </div>
+  </div>
+
+  <!-- PLANNER -->
+  <div id="planner" class="page">
+    <div class="sec-head"><div><div class="sec-title">Planner</div><div class="sec-sub">Budget line items, vendors, payment progress, and final spend</div></div><button class="btn btn-p" onclick="addP()">➕ Add Row</button></div>
+    <div class="stat-grid">
+      <div class="stat clickable" onclick="setBudgetPrompt()"><div class="lbl">Total Budget</div><div class="val" id="p-budget">$0</div><div class="sub">Click to set 👆</div></div>
+      <div class="stat"><div class="lbl">Total Spend</div><div class="val" id="p-spend">$0</div></div>
+      <div class="stat"><div class="lbl">Paid So Far</div><div class="val" id="p-paid">$0</div></div>
+      <div class="stat"><div class="lbl">Left of Budget</div><div class="val" id="p-left">$0</div></div>
+      <div class="stat"><div class="lbl">% Spent</div><div class="val" id="p-pct">0%</div></div>
+    </div>
+    <div class="twrap" style="margin-top:18px"><table>
+      <thead><tr><th>Item</th><th>Category</th><th>Vendor</th><th>Contact</th><th>Due</th><th>Planned</th><th>Paid</th><th>Status</th><th></th></tr></thead>
+      <tbody id="plannerBody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- GUESTS -->
+  <div id="guests" class="page">
+    <div class="sec-head"><div><div class="sec-title">Guest List</div><div class="sec-sub">Track invitations, RSVP status, meal notes, and table assignment</div></div><button class="btn btn-p" onclick="addG()">➕ Add Guest</button></div>
+    <div class="stat-grid">
+      <div class="stat"><div class="lbl">Total Invited</div><div class="val" id="g-total">0</div></div>
+      <div class="stat"><div class="lbl">RSVP Yes</div><div class="val" id="g-yes">0</div></div>
+      <div class="stat"><div class="lbl">Pending</div><div class="val" id="g-pending">0</div></div>
+      <div class="stat"><div class="lbl">Declined</div><div class="val" id="g-no">0</div></div>
+    </div>
+    <div class="twrap" style="margin-top:18px"><table>
+      <thead><tr><th>Guest</th><th># People</th><th>Guest Of</th><th>RSVP</th><th>Dietary</th><th>Table</th><th></th></tr></thead>
+      <tbody id="guestsBody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- SEATING -->
+  <div id="seating" class="page">
+    <div class="sec-head"><div><div class="sec-title">Seating</div><div class="sec-sub">Tables auto-build from Guest List table assignments</div></div></div>
+    <div class="stat-grid">
+      <div class="stat"><div class="lbl">Seated</div><div class="val" id="s-seated">0</div></div>
+      <div class="stat"><div class="lbl">Unassigned</div><div class="val" id="s-unassigned">0</div></div>
+      <div class="stat"><div class="lbl">Tables</div><div class="val" id="s-tables">0</div></div>
+    </div>
+    <div class="sgrid" id="seatingGrid" style="margin-top:18px"></div>
+  </div>
+
+  <!-- GIFTS -->
+  <div id="gifts" class="page">
+    <div class="sec-head"><div><div class="sec-title">Gift List</div><div class="sec-sub">Track gifts, shops, and expected value</div></div><button class="btn btn-p" onclick="addGift()">➕ Add Gift</button></div>
+    <div class="stat-grid">
+      <div class="stat"><div class="lbl">Gift List Value</div><div class="val" id="gift-val">$0</div></div>
+      <div class="stat"><div class="lbl">Gift Items</div><div class="val" id="gift-cnt">0</div></div>
+    </div>
+    <div class="twrap" style="margin-top:18px"><table>
+      <thead><tr><th>Gift</th><th>Shop</th><th>Price</th><th>From Guest</th><th>Comment</th><th></th></tr></thead>
+      <tbody id="giftsBody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- TODO -->
+  <div id="todo" class="page">
+    <div class="sec-head"><div><div class="sec-title">To Do List</div><div class="sec-sub">See what needs attention. Overdue tasks are highlighted.</div></div><button class="btn btn-p" onclick="addT()">➕ Add Task</button></div>
+    <div class="stat-grid">
+      <div class="stat"><div class="lbl">Total Tasks</div><div class="val" id="t-total">0</div></div>
+      <div class="stat"><div class="lbl">Done</div><div class="val" id="t-done">0</div></div>
+      <div class="stat"><div class="lbl">In Progress</div><div class="val" id="t-prog">0</div></div>
+      <div class="stat"><div class="lbl">Overdue</div><div class="val" id="t-over">0</div></div>
+    </div>
+    <div class="twrap" style="margin-top:18px"><table>
+      <thead><tr><th>Time Before</th><th>Task</th><th>Due By</th><th>Status</th><th></th></tr></thead>
+      <tbody id="todoBody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- VENUE -->
+  <div id="venue" class="page">
+    <div class="sec-head"><div><div class="sec-title">Venue Comparison</div><div class="sec-sub">Compare up to six venues side by side</div></div></div>
+    <div class="twrap"><table>
+      <thead><tr><th>Attribute</th><th>Venue A</th><th>Venue B</th><th>Venue C</th><th>Venue D</th><th>Venue E</th><th>Venue F</th></tr></thead>
+      <tbody id="venueBody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div id="schedule" class="page">
+    <div class="sec-head"><div><div class="sec-title">Schedule</div><div class="sec-sub">Timeline for the day. Rows auto-sort by time.</div></div><button class="btn btn-p" onclick="addSch()">➕ Add Row</button></div>
+    <div class="twrap"><table>
+      <thead><tr><th>Time</th><th>Duration</th><th>Description</th><th>Location</th><th></th></tr></thead>
+      <tbody id="scheduleBody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- CATEGORIES -->
+  <div id="categories" class="page">
+    <div class="sec-head"><div><div class="sec-title">Budget by Category</div><div class="sec-sub">How your spend breaks down across categories</div></div></div>
+    <div class="twrap"><table>
+      <thead><tr><th>Category</th><th>Items</th><th>Planned</th><th>Paid</th><th>% of Budget</th></tr></thead>
+      <tbody id="categoriesBody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- BUDGET -->
+  <div id="budget" class="page">
+    <div class="sec-head"><div><div class="sec-title">💰 Budget</div><div class="sec-sub">Set your total budget — everything updates instantly</div></div></div>
+    <div class="fld" style="max-width:320px;margin-bottom:24px"><label>Total Wedding Budget</label><input type="number" id="budgetInput" placeholder="0" step="100" onchange="setBudget()" style="font-size:17px"></div>
+    <div class="stat-grid">
+      <div class="stat"><div class="lbl">Budget</div><div class="val" id="b-budget">$0</div></div>
+      <div class="stat"><div class="lbl">Spend</div><div class="val" id="b-spend">$0</div></div>
+      <div class="stat"><div class="lbl">Remaining</div><div class="val" id="b-rem">$0</div></div>
+      <div class="stat"><div class="lbl">% Used</div><div class="val" id="b-pct">0%</div><div class="pbar"><div class="pfill" id="b-bar" style="width:0%"></div></div></div>
+    </div>
+  </div>
+
+  <!-- SPENDING -->
+  <div id="spending" class="page">
+    <div class="sec-head"><div><div class="sec-title">💳 Spending Tracker</div><div class="sec-sub">Log every payment, past and upcoming</div></div><button class="btn btn-p" onclick="addSp()">➕ Log Payment</button></div>
+    <div class="stat-grid">
+      <div class="stat"><div class="lbl">Total Budget</div><div class="val" id="sp-budget">$0</div></div>
+      <div class="stat"><div class="lbl">Committed</div><div class="val" id="sp-committed">$0</div></div>
+      <div class="stat"><div class="lbl">Paid</div><div class="val" id="sp-paid">$0</div></div>
+      <div class="stat"><div class="lbl">Still Owed</div><div class="val" id="sp-owed">$0</div></div>
+    </div>
+    <div class="twrap" style="margin-top:18px"><table>
+      <thead><tr><th>Date</th><th>Vendor</th><th>Category</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+      <tbody id="spendBody"></tbody>
+    </table></div>
+  </div>
+
+  <!-- HOWTO -->
+  <div id="howto" class="page">
+    <div class="sec-head"><div><div class="sec-title">❓ How To Use</div><div class="sec-sub">Everything you need in a few steps</div></div></div>
+    <div class="hstep"><div class="hnum">1</div><div><h4>Set Your Details</h4><p>Enter names, wedding date, currency. Pick a theme color and toggle dark mode with 🌙.</p></div></div>
+    <div class="hstep"><div class="hnum">2</div><div><h4>Set Your Budget</h4><p>Click the "Total Budget" card or go to the Budget tab and enter your total.</p></div></div>
+    <div class="hstep"><div class="hnum">3</div><div><h4>Add Planner Items</h4><p>Add every vendor and budget item with prices and status in the Planner tab.</p></div></div>
+    <div class="hstep"><div class="hnum">4</div><div><h4>Build Your Guest List</h4><p>Track RSVPs and type a table name — Seating fills in automatically.</p></div></div>
+    <div class="hstep"><div class="hnum">5</div><div><h4>Track Gifts, Tasks & Spending</h4><p>Log gifts, create to-do tasks (overdue ones highlight), and record payments.</p></div></div>
+    <div class="hstep"><div class="hnum">6</div><div><h4>Compare Venues & Plan the Day</h4><p>Compare six venues, then build a day-of schedule (auto-sorts by time).</p></div></div>
+    <div class="hstep"><div class="hnum">7</div><div><h4>Back Up & Share</h4><p>Use Export/Import to back up and share with your partner. Or click "Load Sample Data" to explore.</p></div></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+let D={p1:'',p2:'',wdate:'',curr:'USD',theme:'#6b9c7f',totalBudget:0,planner:[],guests:[],gifts:[],todos:[],venue:{},schedule:[],spending:[]};
+const KEY='weddingBudgetPlannerV6';
+let charts={};
+let saveTimer=null;
+
+function init(){load();renderAll();setInterval(()=>{updateDays();renderStatusBar();},60000);}
+
+function save(){
+  D.p1=v('p1');D.p2=v('p2');D.wdate=v('wdate');D.curr=v('curr');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>{
+    localStorage.setItem(KEY,JSON.stringify(D));
+    document.getElementById('lastSaved').textContent=new Date().toLocaleString();
+  },200);
+  updateCoupleTag();renderStatusBar();
+}
+function load(){
+  const s=localStorage.getItem(KEY);if(s)try{D=JSON.parse(s);}catch(e){}
+  if(!D.venue)D.venue={};if(!D.todos)D.todos=[];if(!D.spending)D.spending=[];
+  sv('p1',D.p1);sv('p2',D.p2);sv('wdate',D.wdate);sv('curr',D.curr);sv('budgetInput',D.totalBudget||'');
+  if(localStorage.getItem('dark')==='true'){document.body.classList.add('dark');document.getElementById('darkBtn').textContent='☀️';}
+  setTheme(D.theme||'#6b9c7f');
+  updateCoupleTag();
+}
+function v(id){const e=document.getElementById(id);return e?e.value:'';}
+function sv(id,x){const e=document.getElementById(id);if(e)e.value=x||'';}
+function updateCoupleTag(){const t=document.getElementById('coupleTag');if(!t)return;if(D.p1||D.p2){t.textContent=(D.p1||'Partner 1')+' & '+(D.p2||'Partner 2')+' · Plan your perfect day';}else{t.textContent='A calm, offline, single-file planner with local auto-save';}}
+
+function toggleDark(){
+  document.body.classList.toggle('dark');
+  const on=document.body.classList.contains('dark');
+  localStorage.setItem('dark',on);
+  document.getElementById('darkBtn').textContent=on?'☀️':'🌙';
+  notify(on?'🌙 Dark mode on':'☀️ Light mode on');renderCharts();
+}
+function setTheme(c){
+  document.documentElement.style.setProperty('--primary',c);
+  document.documentElement.style.setProperty('--primary-dark',shade(c,-20));
+  document.documentElement.style.setProperty('--secondary',shade(c,28));
+  D.theme=c;
+  localStorage.setItem(KEY,JSON.stringify(D));
+  document.querySelectorAll('.sw').forEach(s=>s.classList.toggle('active',toHex(s.style.background)===c));
+  renderCharts();
+}
+function toHex(s){if(s.startsWith('#'))return s;const m=s.match(/\d+/g);if(!m)return s;return '#'+m.slice(0,3).map(x=>(+x).toString(16).padStart(2,'0')).join('');}
+function shade(c,p){let R=parseInt(c.substr(1,2),16),G=parseInt(c.substr(3,2),16),B=parseInt(c.substr(5,2),16);R=Math.max(0,Math.min(255,R+R*p/100));G=Math.max(0,Math.min(255,G+G*p/100));B=Math.max(0,Math.min(255,B+B*p/100));return '#'+[R,G,B].map(x=>Math.round(x).toString(16).padStart(2,'0')).join('');}
+function sym(){return {USD:'$',EUR:'€',GBP:'£',CAD:'$',AUD:'$'}[D.curr]||'$';}
+function money(n){return sym()+(Number(n)||0).toLocaleString(undefined,{maximumFractionDigits:0});}
+function uid(){return '_'+Date.now()+Math.random().toString(36).substr(2,5);}
+function notify(m){const n=document.createElement('div');n.className='notif';n.textContent=m;document.body.appendChild(n);setTimeout(()=>{n.style.transition='.4s';n.style.opacity='0';n.style.transform='translateX(420px)';setTimeout(()=>n.remove(),420);},2600);}
+function party(){if(window.confetti)confetti({particleCount:130,spread:80,origin:{y:.6}});}
+
+function calc(){
+  const spend=D.planner.reduce((s,r)=>s+(Number(r.planned)||0),0);
+  const paid=D.planner.reduce((s,r)=>s+(Number(r.paid)||0),0);
+  return {spend,paid,left:D.totalBudget-spend,pct:D.totalBudget>0?Math.round(spend/D.totalBudget*100):0};
+}
+function updateDays(){const e=document.getElementById('d-days');if(!D.wdate){if(e)e.textContent='—';return;}const d=Math.ceil((new Date(D.wdate)-new Date())/864e5);if(e)e.textContent=d;}
+
+function renderStatusBar(){
+  const c=calc();
+  let days='—';if(D.wdate)days=Math.ceil((new Date(D.wdate)-new Date())/864e5);
+  set('sb-days',days);set('sb-left',money(c.left));
+  const tot=D.guests.reduce((s,g)=>s+(Number(g.count)||0),0);
+  const conf=D.guests.filter(g=>g.rsvp==='yes').reduce((s,g)=>s+(Number(g.count)||0),0);
+  set('sb-conf',(tot>0?Math.round(conf/tot*100):0)+'%');
+  set('sb-tasks',D.todos.filter(t=>t.status==='done').length+'/'+D.todos.length);
+}
+
+function renderAll(){renderDash();renderPlanner();renderGuests();renderSeating();renderGifts();renderTodo();renderVenue();renderSchedule();renderCategories();renderBudget();renderSpending();renderStatusBar();updateDays();}
+function set(id,x){const e=document.getElementById(id);if(e)e.textContent=x;}
+function statusBadge(s){const m={locked:['b-green','Locked'],confirmed:['b-green','Confirmed'],pending:['b-yellow','Pending'],quote:['b-blue','Quote'],'not-booked':['b-gray','Not Booked']};const x=m[s]||['b-gray',s||'—'];return `<span class="badge ${x[0]}">${x[1]}</span>`;}
+function fmtDate(d){const dt=new Date(d+'T00:00:00');const mm=String(dt.getMonth()+1).padStart(2,'0');const dd=String(dt.getDate()).padStart(2,'0');return mm+'/'+dd+'/'+dt.getFullYear();}
+
+function renderDash(){
+  const c=calc();
+  set('d-budget',money(D.totalBudget));set('d-spend',money(c.spend));set('d-paid',money(c.paid));set('d-left',money(c.left));
+  set('d-pct',c.pct+'% spent');const bar=document.getElementById('d-bar');if(bar)bar.style.width=Math.min(c.pct,100)+'%';
+  const conf=D.guests.filter(g=>g.rsvp==='yes').reduce((s,g)=>s+(Number(g.count)||0),0);
+  const tot=D.guests.reduce((s,g)=>s+(Number(g.count)||0),0);
+  set('d-confirmed',conf+'/'+tot);
+  set('d-seated',D.guests.filter(g=>g.table).reduce((s,g)=>s+(Number(g.count)||0),0));
+  set('d-giftval',money(D.gifts.reduce((s,g)=>s+(Number(g.price)||0),0)));
+  updateDays();
+  let a='';
+  if(c.left<0)a+=`<div class="alert"><span class="ico">🚨</span>Over budget by ${money(Math.abs(c.left))}!</div>`;
+  const pp=D.planner.filter(r=>r.status==='pending').length;
+  if(pp)a+=`<div class="alert"><span class="ico">🟡</span>${pp} item${pp>1?'s':''} pending confirmation</div>`;
+  const gp=D.guests.filter(g=>g.rsvp==='pending').length;
+  if(gp)a+=`<div class="alert"><span class="ico">❓</span>${gp} guest${gp>1?'s':''} have not RSVPed</div>`;
+  const today=new Date().toISOString().split('T')[0];
+  const od=D.todos.filter(t=>t.by&&t.by<today&&t.status!=='done').length;
+  if(od)a+=`<div class="alert"><span class="ico">⏰</span>${od} task${od>1?'s':''} overdue</div>`;
+  document.getElementById('alerts').innerHTML=a?`<div class="alerts">${a}</div>`:'';
+  const vr=D.planner.filter(r=>r.vendor||r.item);
+  document.getElementById('d-vendors').innerHTML=vr.length?vr.slice(0,8).map(r=>`<tr><td><strong>${r.item||r.vendor}</strong></td><td>${r.type||'—'}</td><td>${statusBadge(r.status)}</td><td>${money(r.planned)}</td><td>${r.due?fmtDate(r.due):'—'}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Add items in the Planner tab.</td></tr>';
+  renderCharts();
+}
+
+function renderCharts(){
+  const bd={};D.planner.forEach(r=>{const c=r.type||'Other';bd[c]=(bd[c]||0)+(Number(r.planned)||0);});
+  if(charts.b){charts.b.destroy();charts.b=null;}
+  const ctx=document.getElementById('budgetChart');
+  const dark=document.body.classList.contains('dark');const txtc=dark?'#eaeaea':'#2c2c2c';
+  if(ctx&&Object.keys(bd).length){charts.b=new Chart(ctx,{type:'doughnut',data:{labels:Object.keys(bd),datasets:[{data:Object.values(bd),backgroundColor:['#6b9c7f','#c4847c','#7ba3c0','#c9a876','#9b7fb0','#f57c00','#5a8560','#e08e7c','#80c0a0','#d4a5a5'],borderWidth:2,borderColor:dark?'#1f242b':'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:txtc,padding:12,font:{size:11}}}}}});}
+  const sd={};D.spending.filter(s=>s.date&&Number(s.amt)>0).sort((a,b)=>a.date.localeCompare(b.date)).forEach(s=>{sd[s.date]=(sd[s.date]||0)+Number(s.amt);});
+  let run=0;const lbls=Object.keys(sd),vals=lbls.map(k=>run+=sd[k]);
+  if(charts.s){charts.s.destroy();charts.s=null;}
+  const ctx2=document.getElementById('spendChart');
+  if(ctx2&&lbls.length){charts.s=new Chart(ctx2,{type:'line',data:{labels:lbls,datasets:[{label:'Cumulative Spending',data:vals,borderColor:D.theme,backgroundColor:'rgba(107,156,127,.13)',tension:.4,fill:true,pointRadius:4,pointBackgroundColor:D.theme}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:txtc}}},scales:{x:{ticks:{color:txtc}},y:{ticks:{color:txtc}}}}});}
+}
+
+function renderPlanner(){
+  const c=calc();
+  set('p-budget',money(D.totalBudget));set('p-spend',money(c.spend));set('p-paid',money(c.paid));set('p-left',money(c.left));set('p-pct',c.pct+'%');
+  document.getElementById('plannerBody').innerHTML=D.planner.length?D.planner.map(r=>`<tr>
+    <td><input class="cin" value="${esc(r.item)}" placeholder="e.g. Ceremony venue" onchange="upd('planner','${r.id}','item',this.value)"></td>
+    <td><select class="cin" onchange="upd('planner','${r.id}','type',this.value)">${['Venue','Catering','Photography','Flowers','Music','Attire','Transport','Accommodations','Decor','Stationery','Other'].map(o=>`<option ${r.type===o?'selected':''}>${o}</option>`).join('')}</select></td>
+    <td><input class="cin" value="${esc(r.vendor)}" onchange="upd('planner','${r.id}','vendor',this.value)"></td>
+    <td><input class="cin" value="${esc(r.contact)}" onchange="upd('planner','${r.id}','contact',this.value)"></td>
+    <td><input class="cin" type="date" value="${r.due||''}" onchange="upd('planner','${r.id}','due',this.value)"></td>
+    <td><input class="cin" type="number" style="width:95px" value="${r.planned||''}" onchange="upd('planner','${r.id}','planned',this.value)"></td>
+    <td><input class="cin" type="number" style="width:95px" value="${r.paid||''}" onchange="upd('planner','${r.id}','paid',this.value)"></td>
+    <td><select class="cin" onchange="upd('planner','${r.id}','status',this.value)">${[['not-booked','Not Booked'],['quote','Quote'],['pending','Pending'],['confirmed','Confirmed'],['locked','Locked']].map(o=>`<option value="${o[0]}" ${r.status===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></td>
+    <td><button class="btn btn-d btn-sm" onclick="del('planner','${r.id}')">×</button></td></tr>`).join(''):'<tr><td colspan="9" class="empty">No items yet. Click "➕ Add Row".</td></tr>';
+}
+function esc(s){return (s||'').replace(/"/g,'&quot;');}
+
+function renderGuests(){
+  set('g-total',D.guests.reduce((s,g)=>s+(Number(g.count)||0),0));
+  set('g-yes',D.guests.filter(g=>g.rsvp==='yes').reduce((s,g)=>s+(Number(g.count)||0),0));
+  set('g-pending',D.guests.filter(g=>g.rsvp==='pending').length);
+  set('g-no',D.guests.filter(g=>g.rsvp==='no').length);
+  document.getElementById('guestsBody').innerHTML=D.guests.length?D.guests.map(g=>`<tr>
+    <td><input class="cin" value="${esc(g.name)}" onchange="upd('guests','${g.id}','name',this.value)"></td>
+    <td><input class="cin" type="number" style="width:70px" value="${g.count||1}" onchange="upd('guests','${g.id}','count',this.value)"></td>
+    <td><select class="cin" onchange="upd('guests','${g.id}','of',this.value)">${[['both','Both'],['bride','Bride'],['groom','Groom']].map(o=>`<option value="${o[0]}" ${g.of===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></td>
+    <td><select class="cin" onchange="upd('guests','${g.id}','rsvp',this.value)">${[['pending','Pending'],['yes','Yes'],['no','No']].map(o=>`<option value="${o[0]}" ${g.rsvp===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></td>
+    <td><input class="cin" value="${esc(g.dietary)}" placeholder="—" onchange="upd('guests','${g.id}','dietary',this.value)"></td>
+    <td><input class="cin" value="${esc(g.table)}" placeholder="Table" onchange="upd('guests','${g.id}','table',this.value)"></td>
+    <td><button class="btn btn-d btn-sm" onclick="del('guests','${g.id}')">×</button></td></tr>`).join(''):'<tr><td colspan="7" class="empty">No guests yet. Click "➕ Add Guest".</td></tr>';
+}
+
+function renderSeating(){
+  const t={};D.guests.forEach(g=>{if(g.table){(t[g.table]=t[g.table]||[]).push(g);}});
+  set('s-seated',D.guests.filter(g=>g.table).reduce((s,g)=>s+(Number(g.count)||0),0));
+  set('s-unassigned',D.guests.filter(g=>!g.table).reduce((s,g)=>s+(Number(g.count)||0),0));
+  set('s-tables',Object.keys(t).length);
+  document.getElementById('seatingGrid').innerHTML=Object.keys(t).length?Object.keys(t).map(k=>{
+    const gs=t[k],cap=8,cnt=gs.reduce((s,g)=>s+(Number(g.count)||0),0);
+    const diet=[...new Set(gs.filter(g=>g.dietary).map(g=>g.dietary))].join(', ');
+    return `<div class="tcard ${cnt>cap?'over':''}"><h4>${k}</h4><div class="ti">${cnt} / ${cap} seats${cnt>cap?' ⚠️':''}</div>${gs.map(g=>`<div class="gi">${g.name} (${g.count})</div>`).join('')}${diet?`<div class="ti" style="margin-top:10px;border:none;color:var(--success)">🍽️ ${diet}</div>`:''}</div>`;
+  }).join(''):'<div class="empty" style="grid-column:1/-1">Type a table name on the Guest List tab to build your seating chart.</div>';
+}
+
+function renderGifts(){
+  set('gift-val',money(D.gifts.reduce((s,g)=>s+(Number(g.price)||0),0)));set('gift-cnt',D.gifts.length);
+  document.getElementById('giftsBody').innerHTML=D.gifts.length?D.gifts.map(g=>`<tr>
+    <td><input class="cin" value="${esc(g.gift)}" onchange="upd('gifts','${g.id}','gift',this.value)"></td>
+    <td><input class="cin" value="${esc(g.shop)}" onchange="upd('gifts','${g.id}','shop',this.value)"></td>
+    <td><input class="cin" type="number" style="width:90px" value="${g.price||''}" onchange="upd('gifts','${g.id}','price',this.value)"></td>
+    <td><input class="cin" value="${esc(g.guest)}" onchange="upd('gifts','${g.id}','guest',this.value)"></td>
+    <td><input class="cin" value="${esc(g.comment)}" onchange="upd('gifts','${g.id}','comment',this.value)"></td>
+    <td><button class="btn btn-d btn-sm" onclick="del('gifts','${g.id}')">×</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">No gifts yet. Click "➕ Add Gift".</td></tr>';
+}
+
+function renderTodo(){
+  const today=new Date().toISOString().split('T')[0];
+  set('t-total',D.todos.length);set('t-done',D.todos.filter(t=>t.status==='done').length);
+  set('t-prog',D.todos.filter(t=>t.status==='in-progress').length);
+  set('t-over',D.todos.filter(t=>t.by&&t.by<today&&t.status!=='done').length);
+  document.getElementById('todoBody').innerHTML=D.todos.length?D.todos.map(t=>{
+    const od=t.by&&t.by<today&&t.status!=='done';
+    return `<tr style="${od?'background:rgba(211,47,47,.07)':''}">
+    <td><input class="cin" value="${esc(t.before)}" placeholder="6 months" onchange="upd('todos','${t.id}','before',this.value)"></td>
+    <td><input class="cin" value="${esc(t.task)}" onchange="upd('todos','${t.id}','task',this.value)"></td>
+    <td><input class="cin" type="date" value="${t.by||''}" onchange="upd('todos','${t.id}','by',this.value)"></td>
+    <td><select class="cin" onchange="upd('todos','${t.id}','status',this.value)">${[['not-started','Not Started'],['in-progress','In Progress'],['done','Done']].map(o=>`<option value="${o[0]}" ${t.status===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></td>
+    <td><button class="btn btn-d btn-sm" onclick="del('todos','${t.id}')">×</button></td></tr>`;
+  }).join(''):'<tr><td colspan="5" class="empty">No tasks yet. Click "➕ Add Task".</td></tr>';
+}
+
+function renderVenue(){
+  const attrs=['Name','Location','Capacity','Price','Availability','Catering','Parking','Notes'];
+  const cols=['A','B','C','D','E','F'];
+  document.getElementById('venueBody').innerHTML=attrs.map(a=>`<tr><td><strong>${a}</strong></td>${cols.map(c=>{const k=a+'_'+c;return `<td><input class="cin" value="${esc(D.venue[k])}" onchange="updVenue('${k}',this.value)"></td>`;}).join('')}</tr>`).join('');
+}
+
+function renderSchedule(){
+  D.schedule.sort((a,b)=>(a.time||'').localeCompare(b.time||''));
+  document.getElementById('scheduleBody').innerHTML=D.schedule.length?D.schedule.map(s=>`<tr>
+    <td><input class="cin" type="time" value="${s.time||''}" onchange="upd('schedule','${s.id}','time',this.value)"></td>
+    <td><input class="cin" value="${esc(s.duration)}" placeholder="30 min" onchange="upd('schedule','${s.id}','duration',this.value)"></td>
+    <td><input class="cin" value="${esc(s.desc)}" onchange="upd('schedule','${s.id}','desc',this.value)"></td>
+    <td><input class="cin" value="${esc(s.location)}" onchange="upd('schedule','${s.id}','location',this.value)"></td>
+    <td><button class="btn btn-d btn-sm" onclick="del('schedule','${s.id}')">×</button></td></tr>`).join(''):'<tr><td colspan="5" class="empty">No schedule yet. Click "➕ Add Row".</td></tr>';
+}
+
+function renderCategories(){
+  const c={};D.planner.forEach(r=>{const k=r.type||'Other';if(!c[k])c[k]={i:0,p:0,pd:0};c[k].i++;c[k].p+=Number(r.planned)||0;c[k].pd+=Number(r.paid)||0;});
+  document.getElementById('categoriesBody').innerHTML=Object.keys(c).length?Object.keys(c).map(k=>{const x=c[k],pct=D.totalBudget>0?Math.round(x.p/D.totalBudget*100):0;return `<tr><td><strong>${k}</strong></td><td>${x.i}</td><td>${money(x.p)}</td><td>${money(x.pd)}</td><td>${pct}%</td></tr>`;}).join(''):'<tr><td colspan="5" class="empty">Add items in Planner to see category breakdown.</td></tr>';
+}
+
+function renderBudget(){
+  const c=calc();
+  set('b-budget',money(D.totalBudget));set('b-spend',money(c.spend));set('b-rem',money(c.left));set('b-pct',c.pct+'%');
+  const bar=document.getElementById('b-bar');if(bar)bar.style.width=Math.min(c.pct,100)+'%';
+}
+
+function renderSpending(){
+  const committed=D.spending.filter(s=>s.status==='committed').reduce((a,s)=>a+(Number(s.amt)||0),0);
+  const paid=D.spending.filter(s=>s.status==='paid').reduce((a,s)=>a+(Number(s.amt)||0),0);
+  set('sp-budget',money(D.totalBudget));set('sp-committed',money(committed+paid));set('sp-paid',money(paid));set('sp-owed',money(committed));
+  D.spending.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('spendBody').innerHTML=D.spending.length?D.spending.map(s=>`<tr>
+    <td><input class="cin" type="date" value="${s.date||''}" onchange="upd('spending','${s.id}','date',this.value)"></td>
+    <td><input class="cin" value="${esc(s.vendor)}" onchange="upd('spending','${s.id}','vendor',this.value)"></td>
+    <td><input class="cin" value="${esc(s.cat)}" onchange="upd('spending','${s.id}','cat',this.value)"></td>
+    <td><input class="cin" type="number" style="width:100px" value="${s.amt||''}" onchange="upd('spending','${s.id}','amt',this.value)"></td>
+    <td><select class="cin" onchange="upd('spending','${s.id}','status',this.value)">${[['committed','Committed'],['paid','Paid']].map(o=>`<option value="${o[0]}" ${s.status===o[0]?'selected':''}>${o[1]}</option>`).join('')}</select></td>
+    <td><button class="btn btn-d btn-sm" onclick="del('spending','${s.id}')">×</button></td></tr>`).join(''):'<tr><td colspan="6" class="empty">No payments logged yet. Click "➕ Log Payment".</td></tr>';
+}
+
+function persist(){localStorage.setItem(KEY,JSON.stringify(D));document.getElementById('lastSaved').textContent=new Date().toLocaleString();}
+function addP(){D.planner.push({id:uid(),item:'',type:'Venue',vendor:'',contact:'',due:'',planned:0,paid:0,status:'not-booked'});persist();renderAll();notify('➕ Row added');}
+function addG(){D.guests.push({id:uid(),name:'',count:1,of:'both',rsvp:'pending',dietary:'',table:''});persist();renderAll();notify('➕ Guest added');}
+function addGift(){D.gifts.push({id:uid(),gift:'',shop:'',price:0,guest:'',comment:''});persist();renderAll();notify('➕ Gift added');}
+function addT(){D.todos.push({id:uid(),before:'',task:'',by:'',status:'not-started'});persist();renderAll();notify('➕ Task added');}
+function addSch(){D.schedule.push({id:uid(),time:'',duration:'',desc:'',location:''});persist();renderAll();notify('➕ Row added');}
+function addSp(){D.spending.push({id:uid(),date:new Date().toISOString().split('T')[0],vendor:'',cat:'',amt:0,status:'committed'});persist();renderAll();notify('➕ Payment logged');}
+function upd(coll,id,f,x){const r=D[coll].find(y=>y.id===id);if(r){r[f]=['planned','paid','price','count','amt'].includes(f)?Number(x):x;persist();renderAll();}}
+function del(coll,id){D[coll]=D[coll].filter(y=>y.id!==id);persist();renderAll();notify('🗑️ Removed');}
+function updVenue(k,x){D.venue[k]=x;persist();}
+function setBudget(){D.totalBudget=Number(v('budgetInput'))||0;persist();renderAll();if(D.totalBudget>0)party();notify('💰 Budget set to '+money(D.totalBudget));}
+function setBudgetPrompt(){const x=prompt('Enter your total wedding budget:',D.totalBudget||'');if(x!==null){D.totalBudget=Number(x)||0;sv('budgetInput',D.totalBudget||'');persist();renderAll();if(D.totalBudget>0)party();notify('💰 Budget set to '+money(D.totalBudget));}}
+
+function tab(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+  const pg=document.getElementById(id);if(pg)pg.classList.add('active');
+  if(btn)btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='dashboard')renderCharts();
+}
+
+function expData(){const b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='wedding-budget-'+new Date().toISOString().split('T')[0]+'.json';a.click();URL.revokeObjectURL(u);notify('📥 Backup exported!');party();}
+function impData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{D=JSON.parse(ev.target.result);persist();load();renderAll();notify('📤 Backup imported!');party();}catch(x){alert('Could not read file: '+x.message);}};r.readAsText(f);e.target.value='';}
+function resetAll(){localStorage.removeItem(KEY);D={p1:'',p2:'',wdate:'',curr:'USD',theme:'#6b9c7f',totalBudget:0,planner:[],guests:[],gifts:[],todos:[],venue:{},schedule:[],spending:[]};load();renderAll();notify('🔄 Everything reset');}
+function printSummary(){const c=calc();const wd=D.wdate?fmtDate(D.wdate):'—';const w=window.open('','','width=800,height=600');w.document.write('<html><head><title>Wedding Budget Planner</title></head><body style="font-family:Georgia,serif;padding:30px"><h1>💍 Wedding Budget Planner</h1><h2>'+(D.p1||'')+(D.p2?' & '+D.p2:'')+'</h2><p>Wedding Date: '+wd+'</p><hr><h3>Budget</h3><p>Total: '+money(D.totalBudget)+' | Spend: '+money(c.spend)+' | Paid: '+money(c.paid)+' | Left: '+money(c.left)+'</p><h3>Planner Items</h3><ul>'+D.planner.map(r=>'<li>'+(r.item||r.vendor||'Item')+' — '+money(r.planned)+' ('+r.status+')</li>').join('')+'</ul><h3>Guests</h3><p>Invited: '+D.guests.reduce((s,g)=>s+(Number(g.count)||0),0)+' | Confirmed: '+D.guests.filter(g=>g.rsvp==="yes").length+'</p><p style="margin-top:30px;color:#888;font-size:12px">Generated '+new Date().toLocaleString()+'</p></body></html>');w.document.close();w.print();}
+
+function loadSample(){
+  if(D.planner.length&&!confirm('This will replace your current data with sample data. Continue?'))return;
+  D={p1:'Alexander',p2:'Charlotte',wdate:'2026-09-12',curr:'GBP',theme:'#7ba3c0',totalBudget:62000,
+  planner:[
+    {id:uid(),item:'Manor house & grounds hire',type:'Venue',vendor:'Ashbourne Manor',contact:'events@ashbournemanor.co.uk',due:'2026-04-10',planned:18500,paid:9000,status:'locked'},
+    {id:uid(),item:'Documentary photography',type:'Photography',vendor:'Oliver Bennett Photography',contact:'oliver@bennettphoto.co.uk',due:'2026-07-20',planned:4200,paid:1500,status:'confirmed'},
+    {id:uid(),item:'Three-course wedding breakfast',type:'Catering',vendor:'Thornton Fine Dining',contact:'bookings@thorntondining.co.uk',due:'2026-06-15',planned:13800,paid:0,status:'pending'},
+    {id:uid(),item:'Seasonal floral design',type:'Flowers',vendor:'Rosewood Florals',contact:'hello@rosewoodflorals.co.uk',due:'2026-08-25',planned:3100,paid:800,status:'confirmed'},
+    {id:uid(),item:'String quartet & evening band',type:'Music',vendor:'The Wellington Ensemble',contact:'info@wellingtonmusic.co.uk',due:'2026-07-01',planned:2900,paid:0,status:'quote'},
+    {id:uid(),item:'Bridal gown & fittings',type:'Attire',vendor:'Genevieve Couture',contact:'atelier@genevieve.co.uk',due:'2026-06-30',planned:3400,paid:3400,status:'locked'},
+    {id:uid(),item:'Vintage car & chauffeur',type:'Transport',vendor:'Heritage Motors',contact:'hire@heritagemotors.co.uk',due:'2026-09-01',planned:950,paid:0,status:'not-booked'},
+    {id:uid(),item:'Guest accommodation block',type:'Accommodations',vendor:'The Kingsley Hotel',contact:'reservations@kingsley.co.uk',due:'2026-08-12',planned:7200,paid:0,status:'pending'},
+    {id:uid(),item:'Five-tier wedding cake',type:'Decor',vendor:'Patisserie Margaux',contact:'orders@margaux.co.uk',due:'2026-09-05',planned:780,paid:200,status:'confirmed'},
+    {id:uid(),item:'Letterpress invitations',type:'Stationery',vendor:'Whitmore Stationery',contact:'studio@whitmore.co.uk',due:'2026-05-30',planned:890,paid:890,status:'locked'},
+    {id:uid(),item:'Marquee lighting & decor',type:'Decor',vendor:'Lumiere Events',contact:'events@lumiere.co.uk',due:'2026-08-20',planned:2600,paid:600,status:'confirmed'}
+  ],
+  guests:[
+    {id:uid(),name:'William & Eleanor Pembroke',count:2,of:'groom',rsvp:'yes',dietary:'',table:'Top Table'},
+    {id:uid(),name:'Beatrice Hawthorne',count:1,of:'bride',rsvp:'yes',dietary:'Pescatarian',table:'Top Table'},
+    {id:uid(),name:'The Fitzgerald Family',count:4,of:'both',rsvp:'yes',dietary:'',table:'Table 1'},
+    {id:uid(),name:'Henry & Sophia Ashworth',count:2,of:'groom',rsvp:'yes',dietary:'Gluten-free',table:'Table 1'},
+    {id:uid(),name:'Margaret Whitfield',count:1,of:'bride',rsvp:'pending',dietary:'',table:'Table 1'},
+    {id:uid(),name:'Theodore & Grace Sinclair',count:2,of:'both',rsvp:'yes',dietary:'Vegan',table:'Table 2'},
+    {id:uid(),name:'Arthur Caldwell + guest',count:2,of:'groom',rsvp:'pending',dietary:'',table:'Table 2'},
+    {id:uid(),name:'Florence & Edmund Hartley',count:2,of:'bride',rsvp:'yes',dietary:'Nut allergy',table:'Table 2'},
+    {id:uid(),name:'Rupert Davenport',count:1,of:'groom',rsvp:'no',dietary:'',table:''},
+    {id:uid(),name:'Penelope & James Worthington',count:2,of:'bride',rsvp:'yes',dietary:'',table:'Table 3'},
+    {id:uid(),name:'Clara Montgomery',count:1,of:'both',rsvp:'pending',dietary:'Dairy-free',table:''},
+    {id:uid(),name:'The Harrington Family',count:3,of:'bride',rsvp:'yes',dietary:'',table:'Table 3'}
+  ],
+  gifts:[
+    {id:uid(),gift:'Crystal champagne flutes',shop:'Waterford',price:220,guest:'William & Eleanor Pembroke',comment:'Set of six'},
+    {id:uid(),gift:'Cast iron cookware set',shop:'Le Creuset',price:340,guest:'Beatrice Hawthorne',comment:'Sage green'},
+    {id:uid(),gift:'Honeymoon contribution',shop:'—',price:750,guest:'The Fitzgerald Family',comment:'For Santorini'},
+    {id:uid(),gift:'Egyptian cotton bedding',shop:'The White Company',price:180,guest:'Henry & Sophia Ashworth',comment:'Super king'},
+    {id:uid(),gift:'Garden tool collection',shop:'RHS',price:130,guest:'Theodore & Grace Sinclair',comment:''},
+    {id:uid(),gift:'Wine cellar voucher',shop:'Berry Bros',price:300,guest:'Florence & Edmund Hartley',comment:'New home'}
+  ],
+  todos:[
+    {id:uid(),before:'14 months',task:'Secure the manor house',by:'2025-07-10',status:'done'},
+    {id:uid(),before:'12 months',task:'Commission photographer',by:'2025-09-20',status:'done'},
+    {id:uid(),before:'9 months',task:'Send save-the-date cards',by:'2025-12-12',status:'done'},
+    {id:uid(),before:'7 months',task:'Confirm catering & tasting',by:'2026-02-15',status:'done'},
+    {id:uid(),before:'5 months',task:'Final gown fitting',by:'2026-04-30',status:'in-progress'},
+    {id:uid(),before:'4 months',task:'Post formal invitations',by:'2026-05-30',status:'in-progress'},
+    {id:uid(),before:'3 months',task:'Arrange vintage car hire',by:'2026-06-12',status:'not-started'},
+    {id:uid(),before:'2 months',task:'Confirm final numbers',by:'2026-07-12',status:'not-started'},
+    {id:uid(),before:'1 month',task:'Manor walkthrough & rehearsal',by:'2026-08-12',status:'not-started'},
+    {id:uid(),before:'2 weeks',task:'Collect rings from jeweller',by:'2026-08-29',status:'not-started'}
+  ],
+  venue:{
+    'Name_A':'Ashbourne Manor','Location_A':'Cotswolds','Capacity_A':'180','Price_A':'£18,500','Availability_A':'Sep 12 ✓','Catering_A':'In-house','Parking_A':'Free, 100 spots','Notes_A':'Booked — our choice!',
+    'Name_B':'Highgrove Hall','Location_B':'Surrey','Capacity_B':'150','Price_B':'£16,200','Availability_B':'Sep 12 ✓','Catering_B':'Approved list','Parking_B':'Free','Notes_B':'Stunning gardens',
+    'Name_C':'Kingsley Castle','Location_C':'Kent','Capacity_C':'220','Price_C':'£24,000','Availability_C':'Sep 5 only','Catering_C':'In-house only','Parking_C':'Valet','Notes_C':'Over budget',
+    'Name_D':'Rosewood Barn','Location_D':'Oxfordshire','Capacity_D':'120','Price_D':'£12,500','Availability_D':'Sep 12 ✓','Catering_D':'External OK','Parking_D':'Field','Notes_D':'Rustic, charming',
+    'Name_E':'Wellington House','Location_E':'Hampshire','Capacity_E':'90','Price_E':'£10,800','Availability_E':'Sep 19 only','Catering_E':'External OK','Parking_E':'Limited','Notes_E':'Too small'
+  },
+  schedule:[
+    {id:uid(),time:'08:30',duration:'2.5 hrs',desc:'Bridal hair & makeup',location:'Manor suite'},
+    {id:uid(),time:'11:30',duration:'1 hr',desc:'Groom & groomsmen arrive',location:'Manor grounds'},
+    {id:uid(),time:'13:00',duration:'45 min',desc:'Ceremony',location:'Walled garden'},
+    {id:uid(),time:'13:45',duration:'1.5 hrs',desc:'Drinks reception & canapes',location:'Terrace lawn'},
+    {id:uid(),time:'15:30',duration:'2 hrs',desc:'Wedding breakfast',location:'Grand hall'},
+    {id:uid(),time:'17:30',duration:'45 min',desc:'Speeches & toasts',location:'Grand hall'},
+    {id:uid(),time:'18:30',duration:'30 min',desc:'Cake cutting & first dance',location:'Ballroom'},
+    {id:uid(),time:'19:00',duration:'4 hrs',desc:'Evening reception & band',location:'Ballroom'},
+    {id:uid(),time:'23:00',duration:'30 min',desc:'Sparkler send-off',location:'Manor entrance'}
+  ],
+  spending:[
+    {id:uid(),date:'2025-07-15',vendor:'Ashbourne Manor',cat:'Venue',amt:9000,status:'paid'},
+    {id:uid(),date:'2025-09-25',vendor:'Oliver Bennett Photography',cat:'Photography',amt:1500,status:'paid'},
+    {id:uid(),date:'2026-03-01',vendor:'Genevieve Couture',cat:'Attire',amt:3400,status:'paid'},
+    {id:uid(),date:'2026-05-30',vendor:'Whitmore Stationery',cat:'Stationery',amt:890,status:'paid'},
+    {id:uid(),date:'2026-06-10',vendor:'Rosewood Florals',cat:'Flowers',amt:800,status:'paid'},
+    {id:uid(),date:'2026-06-20',vendor:'Patisserie Margaux',cat:'Decor',amt:200,status:'paid'},
+    {id:uid(),date:'2026-07-05',vendor:'Lumiere Events',cat:'Decor',amt:600,status:'paid'},
+    {id:uid(),date:'2026-08-01',vendor:'Thornton Fine Dining',cat:'Catering',amt:6900,status:'committed'},
+    {id:uid(),date:'2026-08-12',vendor:'The Kingsley Hotel',cat:'Accommodations',amt:3600,status:'committed'}
+  ]};
+  persist();load();renderAll();notify('🎁 Sample data loaded!');party();
+}
+
+window.addEventListener('DOMContentLoaded',init);
+window.addEventListener('beforeunload',()=>{D.p1=v('p1');D.p2=v('p2');D.wdate=v('wdate');D.curr=v('curr');localStorage.setItem(KEY,JSON.stringify(D));});
+</script>
+</body>
+</html>
